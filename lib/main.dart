@@ -2,11 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'models/news.dart';
-import 'bootstrap.dart';
+import 'package:zangteevn/models/news.dart';
+import 'package:zangteevn/providers/news.dart';
+import 'providers/news.dart';
+import 'global-constant.dart';
 
 const Map<String, String> svgIcons = {
   'star': 'assets/svg/star.svg',
@@ -29,11 +32,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => News()),
+        ChangeNotifierProvider(create: (_) => NewsProvider()),
       ],
       child: MaterialApp(
           title: 'ZangTee - Drinks & more',
           home: Scaffold(
+            bottomNavigationBar: Container(
+              child: BottomNavbar(),
+            ),
             body: Column(
               children: [
                 Container(
@@ -57,6 +63,72 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class BottomNavbar extends StatelessWidget {
+  const BottomNavbar({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 60,
+      decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: Colors.black26))
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(s1),
+                child: SvgPicture.asset(
+                    svgIcons['drink'].toString(),
+                    color: Colors.deepPurple,
+                    height: 25,
+                    semanticsLabel: 'foodDelivery'),
+              ),
+              Text('Đồ uống',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+            ],
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(s1),
+                child: SvgPicture.asset(
+                    svgIcons['lunchBox'].toString(),
+                    color: Colors.deepPurple,
+                    height: 25,
+                    semanticsLabel: 'discountVoucher'),
+              ),
+              Text('Hoa quả',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+            ],
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(s1),
+                child: SvgPicture.asset(
+                    svgIcons['creditCard'].toString(),
+                    height: 25,
+                    color: Colors.deepPurple,
+                    semanticsLabel: 'customerService'),
+              ),
+              Text('Tài khoản',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple,)),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+}
+
 class NewsWidget extends StatefulWidget {
   const NewsWidget({Key? key}) : super(key: key);
 
@@ -66,16 +138,87 @@ class NewsWidget extends StatefulWidget {
 
 class _NewsWidgetState extends State<NewsWidget> {
   @override
+  void initState() {
+    final newsProvider = Provider.of<NewsProvider>(context, listen: false);
+    newsProvider.getNews(context);
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final newsProvider = Provider.of<NewsProvider>(context);
     return Container(
-      padding: EdgeInsets.fromLTRB(s3, 0, s3, 0),
       alignment: Alignment.topLeft,
       child: Padding(
-        padding: const EdgeInsets.only(top: s2),
-        child: Text('Tin mới từ ZangTee',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        padding: EdgeInsets.all(s3),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Tin mới từ ZangTee',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            Container(
+                padding: EdgeInsets.only(top: s1),
+                child: Consumer<NewsProvider>(
+                    builder: (context, newsProvider, child) {
+                  if (newsProvider.news.loading) {
+                    return Text('Đang tải tin tức mới...');
+                  } else if (newsProvider.news.success != null &&
+                      newsProvider.news.success == false) {
+                    return Text('Lỗi khi tải tin');
+                  } else if (newsProvider.news.success != null &&
+                      newsProvider.news.success == true &&
+                      newsProvider.news.data != null) {
+                    return Container(
+                      height: 420,
+                      width: double.infinity,
+                      child: GridView.count(
+                        primary: false,
+                        crossAxisSpacing: s1,
+                        mainAxisSpacing: s1,
+                        crossAxisCount: 2,
+                        children: newsProvider.news.data!.data
+                            .map((news) => NewsItem(
+                                thumbnail: news.thumbnail, title: news.title, description: news.description))
+                            .toList(),
+                      ),
+                    );
+                  } else {
+                    print(newsProvider.news.success);
+                    return Text('Lỗi tải tinmmn');
+                  }
+                })),
+          ],
+        ),
       ),
     );
+  }
+}
+
+class NewsItem extends StatelessWidget {
+  final String thumbnail;
+  final String title;
+  final String description;
+
+  const NewsItem({Key? key, required this.thumbnail, required this.title, required this.description})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+        child: Column(
+            children: [
+              Image.network(thumbnail),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(s2, s1, s2, s1),
+                child: Text(title, style: TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis, maxLines: 2),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(s2, 0, s2, 0),
+                child: Text(description, overflow: TextOverflow.ellipsis, maxLines: 3),
+              )
+            ]
+        ));
   }
 }
 
@@ -86,15 +229,12 @@ class HeaderWelcome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      return Column(children: [
-        Text('ZANGTEE - DRINKS & MORE',
-            style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                height: 2)),
-        Text('Chúc bạn một ngày tốt lành',
-            style: TextStyle(color: Colors.white)),
-      ]);
+    return Column(children: [
+      Text('ZANGTEE - DRINKS & MORE',
+          style: TextStyle(
+              color: Colors.white, fontWeight: FontWeight.bold, height: 2)),
+      Text('Chúc bạn một ngày tốt lành', style: TextStyle(color: Colors.white)),
+    ]);
   }
 }
 
@@ -126,7 +266,7 @@ class HeaderActions extends StatelessWidget {
                           padding: const EdgeInsets.only(left: 1.0),
                           child: SvgPicture.asset(svgIcons['star'].toString(),
                               color: Colors.amber,
-                              height: 14,
+                              height: 14.0,
                               semanticsLabel: 'Star'),
                         )
                       ],

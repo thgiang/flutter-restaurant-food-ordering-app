@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+const String apiUrl = "http://192.168.1.54/backend-restaurant-food-ordering-app/public";
 const double s1 = 5;
 const double s2 = 10;
 const double s3 = 15;
