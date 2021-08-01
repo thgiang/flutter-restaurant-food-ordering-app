@@ -36,27 +36,33 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
           title: 'ZangTee - Drinks & more',
-          home: Scaffold(
-            bottomNavigationBar: Container(
-              child: BottomNavbar(),
-            ),
-            body: Column(
-              children: [
-                Container(
-                  child: Column(children: [
-                    Container(
-                      child: HeaderWelcome(),
-                      margin: EdgeInsets.fromLTRB(0, s5, 0, s3),
-                    ),
-                    Container(child: HeaderActions()),
-                  ]),
-                  alignment: Alignment.center,
-                  color: Colors.deepPurple,
-                  width: double.infinity,
-                  padding: EdgeInsets.all(s1),
+          home: Container(
+            color: Colors.deepPurple,
+            child: SafeArea(
+              bottom: false,
+              child: Scaffold(
+                bottomNavigationBar: Container(
+                  child: BottomNavbar(),
                 ),
-                Container(child: NewsWidget()),
-              ],
+                body: Column(
+                  children: [
+                    Container(
+                      child: Column(children: [
+                        Container(
+                          child: HeaderWelcome(),
+                          margin: EdgeInsets.fromLTRB(0, s1, 0, s3),
+                        ),
+                        Container(child: HeaderActions()),
+                      ]),
+                      alignment: Alignment.center,
+                      color: Colors.deepPurple,
+                      width: double.infinity,
+                      padding: EdgeInsets.all(s1),
+                    ),
+                    Container(child: NewsWidget()),
+                  ],
+                ),
+              ),
             ),
           )),
     );
